@@ -2,6 +2,7 @@ from collections import namedtuple
 from strategy import Strategy
 from memory import ReplayBuffer
 from model import Model
+from utils import LearningReport
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 import numpy as np
@@ -13,11 +14,15 @@ class Agent:
     def __init__(self, obs_shape, act_shape, hidden_layers=[200, 200], optimizer=Adam(lr=0.001)):
         self.memory = ReplayBuffer(batch_size=64)
         self.strategy = Strategy(epsilon=1)
+        self.reporter = LearningReport()
         self.optimizer = optimizer
         self.policy_model = Model(obs_shape, act_shape, hidden_layers)
         self.target_model = Model(obs_shape, act_shape, hidden_layers)
         self.obs_shape = obs_shape
         self.act_shape = act_shape
+        
+        self.episode = 0
+        self.step = 0
 
         self.update_policy()
 
@@ -27,19 +32,23 @@ class Agent:
 
         for policy_var, target_var in zip(policy_variables, target_variables):
             target_var.assign(policy_var.numpy())
-    
+
+    def get_episode_report(self):
+        self.episode += 1
+        return self.reporter.report_episode(self.episode, self.strategy.get_epsilon(self.episode))
+
     # STEP 1: TAKE ACTION
     def take_action(self, observation):
-        epsilon = self.strategy.get_epsilon()
+        epsilon = self.strategy.get_epsilon(self.episode)
 
-        # the agent takes random actions sometimes to explore environment
-        if epsilon > random.random():
-            return random.randrange(self.act_shape), epsilon
+        if epsilon > random.random(): # the agent takes random actions sometimes to explore environment
+            return random.randrange(self.act_shape) 
         else:
-            return np.argmax(self.policy_model(np.expand_dims(observation, axis=0).astype(np.float32))), epsilon
+            return np.argmax(self.policy_model(np.expand_dims(observation, axis=0).astype(np.float32)))
 
     # STEP 2: SAVE THE EXPERIENCE (OBSERVATION) FROM THE ACTION TO MEMORY
     def remember(self, observation, action, observation_next, reward, done):
+        self.reporter.add_to_report(reward)
         self.memory.push(Experience(observation, action, observation_next, reward, done))
 
     # STEP 3: EVALUATE POLICY ACCORDING TO COLLECTED EXPERIENCES
@@ -66,5 +75,7 @@ class Agent:
             gradients = tape.gradient(loss, variables)
             self.optimizer.apply_gradients(zip(gradients, variables))
 
-        if self.strategy.time_to_update_policy():
+        if self.strategy.time_to_update_policy(self.step):
             self.update_policy()
+
+        self.step += 1

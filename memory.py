@@ -22,5 +22,3 @@ class ReplayBuffer:
 
     def enough_sample(self):
         return len(self.memory) >= self.batch_size
-
-    
