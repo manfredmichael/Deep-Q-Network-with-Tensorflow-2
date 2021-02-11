@@ -20,7 +20,7 @@ class ReplayBuffer:
     def sample(self):
         return random.sample(self.memory, self.batch_size)
 
-    def sample_exist(self):
+    def enough_sample(self):
         return len(self.memory) >= self.batch_size
 
     
