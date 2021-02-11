@@ -50,17 +50,17 @@ class Agent:
 
             observations      = np.asarray(experiences[0])
             actions           = np.asarray(experiences[1])
-            rewards           = np.asarray(experiences[2])
-            observations_next = np.asarray(experiences[3])
+            observations_next = np.asarray(experiences[2])
+            rewards           = np.asarray(experiences[3])
             dones             = np.asarray(experiences[4])
 
             q_values_next = self.target_model(observations_next.astype(np.float32))
             q_values_target = np.where(dones, rewards, rewards + self.strategy.gamma * np.max(q_values_next, axis=1))
-            q_values_target = tf.convert_to_tensor(q_values_target, dtype=np.float32)
+            q_values_target = tf.convert_to_tensor(q_values_target, dtype='float32')
 
             with tf.GradientTape() as tape:
-                q_values = tf.reduce_sum(self.target_model(observations.astype(np.float32)) * tf.one_hot(actions, self.act_shape), axis=1)
-                loss = tf.reduce_mean(np.square(q_values_target - q_values))
+                q_values = tf.math.reduce_sum(self.policy_model(observations.astype('float32')) * tf.one_hot(actions, self.act_shape), axis=1)
+                loss = tf.math.reduce_mean(tf.square(q_values_target - q_values))
 
             variables = self.policy_model.trainable_variables
             gradients = tape.gradient(loss, variables)

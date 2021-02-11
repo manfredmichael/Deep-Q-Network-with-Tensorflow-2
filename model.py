@@ -5,7 +5,7 @@ class Model(tf.keras.Model):
     def __init__(self, obs_shape, act_shape, hidden_layers):
         super(Model, self).__init__()
         self.input_ = Flatten(input_shape=obs_shape)
-        self.output = Dense(act_shape, activation='linear')
+        self.output_ = Dense(act_shape, activation='linear')
 
         self.hidden = []
         for hidden_unit in hidden_layers:
@@ -16,6 +16,6 @@ class Model(tf.keras.Model):
         x = self.input_(inputs)
         for hidden in self.hidden:
             x = hidden(x)
-        x = self.output(x)
+        x = self.output_(x)
         return x
         
