@@ -2,7 +2,7 @@ from agent import Agent
 import itertools
 import gym
 
-env = gym.make('CartPole-v0')
+env = gym.make('LunarLander-v2')
 
 obs_shape = env.observation_space.sample().shape
 act_shape = env.action_space.n
